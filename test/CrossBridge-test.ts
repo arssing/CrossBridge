@@ -89,8 +89,6 @@ describe("CrossBridge-tests", function () {
       ["address", "uint256","uint64","uint64","uint256","string"],
       [user1.address, toSwap, 2, 2, nonce, "STT"]
     );
-
-    
     
     let signature = await owner.signMessage(ethers.utils.arrayify(msg));
     let sig = await ethers.utils.splitSignature(signature);
