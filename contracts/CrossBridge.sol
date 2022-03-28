@@ -10,33 +10,35 @@ contract CrossBridge is AccessControl {
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     
-    mapping(bytes32 => bool) hashWasUsed;
+    uint64 chainFrom;
     mapping(uint64 => bool) chainIds;
+    mapping(address => bool) validators;
     mapping(string => address) addressBySymbol;
     mapping(address => uint) nonces;
-    mapping(address => bool) validators;
+    mapping(bytes32 => bool) hashWasUsed;
 
-    constructor() {
+    constructor(uint64 _chainFrom) {
         _setupRole(ADMIN_ROLE, msg.sender);
+        chainFrom = _chainFrom;
     }
 
-    function swap(uint _amount, uint64 _chainFrom, uint64 _chainTo, string memory _symbol) public {
-        require(chainIds[_chainFrom] && chainIds[_chainTo], "CrossBridge::swap:chainId not supported");
+    function swap(uint _amount, uint64 _chainTo, string memory _symbol) public {
+        require(chainIds[_chainTo], "CrossBridge::swap:chainId not supported");
         require(addressBySymbol[_symbol] != address(0), "CrossBridge::swap:token not supported");
         require(IERC20MintBurn(addressBySymbol[_symbol]).allowance(msg.sender, address(this)) >= _amount, "CrossBridge::swap:insufficient allowance");
 
-        bytes32 hashed = getMessageHash(msg.sender, _amount, _chainFrom, _chainTo, nonces[msg.sender], _symbol);
+        bytes32 hashed = getMessageHash(msg.sender, _amount, chainFrom, _chainTo, nonces[msg.sender], _symbol);
         require(hashWasUsed[hashed] != true, "CrossBridge::swap:hash was used");
         
         hashWasUsed[hashed] = true;
         nonces[msg.sender] += 1;
 
         IERC20MintBurn(addressBySymbol[_symbol]).burnFrom(msg.sender, _amount);
-        emit swapInitialized(msg.sender, _amount, _chainFrom, _chainTo, nonces[msg.sender] - 1, _symbol);
+        emit swapInitialized(msg.sender, _amount, chainFrom, _chainTo, nonces[msg.sender] - 1, _symbol);
     }
 
-    function redeem(uint _amount, uint64 _chainFrom, uint64 _chainTo, uint _nonce, string memory _symbol, uint8 v, bytes32 r, bytes32 s) public {
-        bytes32 hashed = getMessageHash(msg.sender, _amount, _chainFrom, _chainTo, _nonce, _symbol);
+    function redeem(uint _amount, uint64 _chainTo, uint _nonce, string memory _symbol, uint8 v, bytes32 r, bytes32 s) public {
+        bytes32 hashed = getMessageHash(msg.sender, _amount, chainFrom, _chainTo, _nonce, _symbol);
         require(hashWasUsed[hashed] != true, "CrossBridge::redeem:hash was used");
 
         bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hashed));

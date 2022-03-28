@@ -1,10 +1,9 @@
 import "@nomiclabs/hardhat-ethers";
 import { task } from "hardhat/config";
 
-task("swap", "swap from chainFrom to chainTo with amount")
+task("swap", "swap")
     .addParam("address","smart contract address")
     .addParam("amount","amount")
-    .addParam("chainfrom","from")
     .addParam("chainto","to")
     .addParam("symbol","token symbol")
     .setAction (async (taskArgs, hre) => {
@@ -19,7 +18,7 @@ task("swap", "swap from chainFrom to chainTo with amount")
         accounts[0]
     );
 
-    const tx = await BridgeContract.swap(convertAmount, taskArgs.chainfrom, taskArgs.chainto, taskArgs.symbol);
+    const tx = await BridgeContract.swap(convertAmount, taskArgs.chainto, taskArgs.symbol);
 
     console.log(
         `tx hash: ${tx.hash}`
@@ -28,7 +27,6 @@ task("swap", "swap from chainFrom to chainTo with amount")
 task("redeem", "redeem tokens")
     .addParam("address","smart contract address")
     .addParam("amount","amount")
-    .addParam("chainfrom","from")
     .addParam("chainto","to")
     .addParam("nonce","nonce")
     .addParam("symbol","token symbol")
@@ -47,7 +45,7 @@ task("redeem", "redeem tokens")
         accounts[0]
     );
 
-    const tx = await BridgeContract.redeem(convertAmount, taskArgs.chainfrom, taskArgs.chainto, taskArgs.nonce, taskArgs.symbol, taskArgs.v, taskArgs.r, taskArgs.s);
+    const tx = await BridgeContract.redeem(convertAmount, taskArgs.chainto, taskArgs.nonce, taskArgs.symbol, taskArgs.v, taskArgs.r, taskArgs.s);
 
     console.log(
         `tx hash: ${tx.hash}`

@@ -2,7 +2,7 @@ import { ethers } from "hardhat";
 
 async function main() {
   const factory = await ethers.getContractFactory("CrossBridge");
-  let contract = await factory.deploy();
+  let contract = await factory.deploy(2);
 
   await contract.deployed();
   console.log(`Contract address: ${contract.address}`);

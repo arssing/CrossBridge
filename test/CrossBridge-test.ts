@@ -9,6 +9,7 @@ describe("CrossBridge-tests", function () {
   let token2: Token;
   let crossBridge1: CrossBridge;
   let crossBridge2: CrossBridge;
+
   beforeEach(async () => {
     const [owner, user1, user2] = await ethers.getSigners();
     const tokenFactory = await ethers.getContractFactory("Token",owner) as Token__factory;
@@ -19,8 +20,8 @@ describe("CrossBridge-tests", function () {
     token1 = await tokenFactory.deploy("TestToken1","STT");
     token2 = await tokenFactory.deploy("TestToken2","STT");
 
-    crossBridge1 = await bridgeFactory.deploy();
-    crossBridge2 = await bridgeFactory.deploy();
+    crossBridge1 = await bridgeFactory.deploy(2);
+    crossBridge2 = await bridgeFactory.deploy(2);
 
     await token1.deployed();
     await token2.deployed();
@@ -67,19 +68,19 @@ describe("CrossBridge-tests", function () {
     const toSwap = ethers.utils.parseEther("1");
 
     await expect(
-      crossBridge1.connect(user1).swap(toSwap, 1, 1, "STT")
+      crossBridge1.connect(user1).swap(toSwap, 1, "STT")
     ).to.be.revertedWith("CrossBridge::swap:chainId not supported");
 
     await expect(
-      crossBridge1.connect(user1).swap(toSwap, 2, 2, "STT1")
+      crossBridge1.connect(user1).swap(toSwap, 2, "STT1")
     ).to.be.revertedWith("CrossBridge::swap:token not supported");
 
     await expect(
-      crossBridge1.connect(user1).swap(toSwap, 2, 2, "STT")
+      crossBridge1.connect(user1).swap(toSwap, 2, "STT")
     ).to.be.revertedWith("CrossBridge::swap:insufficient allowance");
 
     await token1.connect(user1).approve(crossBridge1.address, toSwap);
-    const tx = await crossBridge1.connect(user1).swap(toSwap, 2, 2, "STT");
+    const tx = await crossBridge1.connect(user1).swap(toSwap, 2, "STT");
     
     let receipt: ContractReceipt = await tx.wait();
     const event = receipt.events?.find(event => event.event === "swapInitialized");
@@ -93,12 +94,12 @@ describe("CrossBridge-tests", function () {
     let signature = await owner.signMessage(ethers.utils.arrayify(msg));
     let sig = await ethers.utils.splitSignature(signature);
     
-    await crossBridge2.connect(user1).redeem(toSwap, 2, 2, nonce, "STT", sig.v, sig.r, sig.s);
+    await crossBridge2.connect(user1).redeem(toSwap, 2, nonce, "STT", sig.v, sig.r, sig.s);
 
     expect(await token2.balanceOf(user1.address)).to.equal(toSwap);
 
     await expect(
-      crossBridge2.connect(user1).redeem(toSwap, 2, 2, nonce, "STT", sig.v, sig.r, sig.s)
+      crossBridge2.connect(user1).redeem(toSwap, 2, nonce, "STT", sig.v, sig.r, sig.s)
     ).to.be.revertedWith("CrossBridge::redeem:hash was used");
 
     const newNonce = nonce + 1;
@@ -110,7 +111,7 @@ describe("CrossBridge-tests", function () {
     let sig2 = await ethers.utils.splitSignature(signature2);
     
     await expect(
-      crossBridge2.connect(user1).redeem(toSwap, 2, 2, newNonce, "STT", sig2.v, sig2.r, sig2.s)
+      crossBridge2.connect(user1).redeem(toSwap, 2, newNonce, "STT", sig2.v, sig2.r, sig2.s)
     ).to.be.revertedWith("CrossBridge::redeem:signature not valid");
   });
 
